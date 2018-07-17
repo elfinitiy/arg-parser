@@ -14,10 +14,12 @@ apply plugin: "kotlin"
 apply plugin: "idea"
 
 apply plugin: "application"
-
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 
 group 'com.elfinitiy'
+archivesBaseName = "arg-parser"
 version '0.1.0'
 
 repositories {
@@ -34,6 +36,69 @@ dependencies {
 run {
     if (project.hasProperty('runArgs')) {
         args findProperty('runArgs')
+    }
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'Argument parser'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'A simple argument parser written in kotlin'
+                url 'https://github.com/elfinitiy/arg-parser'
+
+                scm {
+                    connection 'scm:git:git@github.com:elfinitiy/arg-parser.git'
+                    developerConnection 'scm:git:git@github.com:elfinitiy/arg-parser.git'
+                    url 'https://github.com/elfinitiy/arg-parser'
+                }
+
+                licenses {
+                    license {
+                        name 'MIT License'
+                        url 'https://opensource.org/licenses/MIT'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'elfinitiy'
+                        name 'Ruslan Cisa'
+                        email 'cisa.ruslan@gmail.com'
+                    }
+                }
+            }
+        }
     }
 }
 

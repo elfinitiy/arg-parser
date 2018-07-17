@@ -82,8 +82,9 @@ class ArgParser(private val args: Array<String>,
             return
         }
 
+        val startIndex = if (prog != null) 1 else 0
         var previousArgContainer: ArgContainer? = null
-        for(index in 1 until finalArgList.size) {
+        for(index in startIndex until finalArgList.size) {
             val currentArgument = finalArgList[index]
 
             if(isHelpRequired(currentArgument)) {
@@ -139,11 +140,15 @@ class ArgParser(private val args: Array<String>,
     }
 
     private fun getProgramName(): String {
-        val path = finalArgList[0]
+        return if(prog != null) {
+            prog
+        }
+        else {
+            val path = finalArgList[0]
 
-        val lastIndex = path.lastIndexOf(File.separator)
-
-        return path.substring(lastIndex + 1)
+            val lastIndex = path.lastIndexOf(File.separator)
+            path.substring(lastIndex + 1)
+        }
     }
 
     private fun generateArgumentUsageText(): String {

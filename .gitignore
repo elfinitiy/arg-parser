@@ -64,4 +64,5 @@ fabric.properties
 jniLibs
 build
 local.properties
+gradle.properties
 reports
