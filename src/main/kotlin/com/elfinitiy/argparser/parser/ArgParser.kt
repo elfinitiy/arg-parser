@@ -46,7 +46,7 @@ class ArgParser(private val args: Array<String>,
         argContainerList.add(argContainer)
     }
 
-    fun parseArgs(vararg extraArgs: String): Map<String, Any?> {
+    fun parseArgs(vararg extraArgs: String): Map<String, ArgContainer> {
         mergeArgs(extraArgs)
 
         if(finalArgList.isEmpty()) {
@@ -54,7 +54,7 @@ class ArgParser(private val args: Array<String>,
         }
 
         iterateOverArgs()
-        val map = HashMap<String, Any?>()
+        val map = HashMap<String, ArgContainer>()
 
         if(isHelpRequired) {
             print(generateHelpText())
@@ -63,11 +63,7 @@ class ArgParser(private val args: Array<String>,
         }
 
         for(argContainer in argContainerList) {
-            map[argContainer.getDestinationName()] = if(argContainer.isSingle()) {
-                argContainer.getValue()
-            } else {
-                argContainer.getValues()
-            }
+            map[argContainer.getDestinationName()] = argContainer
         }
 
         return map

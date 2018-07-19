@@ -2,6 +2,7 @@ package com.elfinitiy.parser
 
 import kotlin.reflect.KClass
 
+@Suppress("UNCHECKED_CAST")
 class ArgContainer(
         private val argNames: Array<out String>,
         private val consumeArgCount: String = ArgContainer.ARGUMENT_COUNT_SINGLE,
@@ -22,9 +23,21 @@ class ArgContainer(
             it.contains(ARGUMENT_OPTIONAL_PREFIX)
         }
 
+        //Index, Len
+        var topIndex = 0
+        var topLength = 0
+        for(index in 0 until argNames.size) {
+            var item = argNames[index]
+            val len = item.length
+            if(len > topLength) {
+                topIndex = index
+                topLength = len
+            }
+        }
+
         firstArgumentName = argNames[0]
         upperCaseFirstName = firstArgumentName.substringAfterLast(ARGUMENT_OPTIONAL_PREFIX).toUpperCase()
-        destinationName = destination ?: upperCaseFirstName
+        destinationName = destination ?: argNames[topIndex].replace("-", "")
     }
 
     fun addValue(value: Any) {
@@ -35,21 +48,22 @@ class ArgContainer(
         return argNames.contains(argName)
     }
 
-    fun getValue(): Any? {
+    fun <T> getValue(): T? {
         if(valueCollector.size <= 0) {
             return null
         }
 
-        return valueCollector[0]
+        return valueCollector[0] as T
     }
 
-    fun getValues(): List<Any> {
-        return valueCollector
+    fun<T> getValues(): ArrayList<T> {
+        return valueCollector as ArrayList<T>
     }
 
     fun isSingle(): Boolean {
         return consumeArgCount == ARGUMENT_COUNT_SINGLE
     }
+
 
     fun hasSingleValue(): Boolean {
         return valueCollector.isNotEmpty()
