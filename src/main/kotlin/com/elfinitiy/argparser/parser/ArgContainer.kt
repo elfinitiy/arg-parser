@@ -1,18 +1,18 @@
-package com.elfinitiy.parser
-
-import kotlin.reflect.KClass
+package com.elfinitiy.argparser.parser
 
 @Suppress("UNCHECKED_CAST")
 class ArgContainer(
         private val argNames: Array<out String>,
         private val consumeArgCount: String = ArgContainer.ARGUMENT_COUNT_SINGLE,
         private val default: String? = null,
-        private val type: KClass<out Any> = Any::class,
         private val metaVar: String? = null,
         private val help: String = "",
-        private val destination: String? = null
+        destination: String? = null
 ) {
-    private val isOptional: Boolean
+    val isOptional: Boolean
+    val isPositional: Boolean
+    val positionalIndex: Int
+
     private val valueCollector = ArrayList<Any>()
     private val destinationName: String
     private val firstArgumentName: String
@@ -21,6 +21,14 @@ class ArgContainer(
     init {
         isOptional = argNames.all {
             it.contains(ARGUMENT_OPTIONAL_PREFIX)
+        }
+        isPositional = !isOptional
+
+
+        positionalIndex = if(isPositional) {
+            nextCounter()
+        } else {
+            -1
         }
 
         //Index, Len
@@ -92,11 +100,26 @@ class ArgContainer(
 
     }
 
+    fun isFull() = when(consumeArgCount) {
+        ARGUMENT_COUNT_SINGLE -> valueCollector.size == 1
+        ARGUMENT_COUNT_SPECIAL_ONE_OR_MORE, ARGUMENT_COUNT_SPECIAL_ANY -> false
+        else -> {
+            val count = consumeArgCount.toInt()
+            valueCollector.size == count
+        }
+    }
+
     companion object {
         const val ARGUMENT_COUNT_SINGLE = "?"
         const val ARGUMENT_COUNT_SPECIAL_ANY = "*"
         const val ARGUMENT_COUNT_SPECIAL_ONE_OR_MORE = "+"
 
         const val ARGUMENT_OPTIONAL_PREFIX = "-"
+
+        var ARGUMENT_NOT_OPTIONAL_COUNTER = 0
+
+        fun nextCounter(): Int {
+            return ARGUMENT_NOT_OPTIONAL_COUNTER++
+        }
     }
 }

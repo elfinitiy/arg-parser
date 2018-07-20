@@ -1,22 +1,22 @@
-package com.elfinitiy.parser
+package com.elfinitiy.argparser.parser
 
 import java.io.File
-import kotlin.reflect.KClass
 
 class ArgParser(private val args: Array<String>,
                 private val prog: String? = null,
                 private val usage: String? = null,
                 private val description: String = "",
-                private val epilog: String = ""
+                private val epilog: String = "",
+                private val firstIndexIsPath: Boolean = true
                 ) {
 
-    private val outputDataCollection = ArrayList<String>()
     private val platformLineSeparator = System.lineSeparator()
     private val argContainerList = ArrayList<ArgContainer>()
     private val finalArgList = ArrayList<String>()
     private var isHelpRequired = false
+    private val iterationStartIndex = if (firstIndexIsPath) 1 else 0
 
-    private val argMap = HashMap<String, Any>()
+    private val argContainerMap = HashMap<String, ArgContainer>()
 
     init {
         finalArgList.addAll(args)
@@ -25,7 +25,6 @@ class ArgParser(private val args: Array<String>,
     fun addArgument(vararg argNames: String,
                     consumeArgCount: String = ArgContainer.ARGUMENT_COUNT_SINGLE,
                     default: String? = null,
-                    type: KClass<out Any> = Any::class,
                     metaVar: String? = null,
                     help: String = "",
                     destination: String? = null
@@ -38,7 +37,6 @@ class ArgParser(private val args: Array<String>,
         val argContainer = ArgContainer(argNames,
                 consumeArgCount = consumeArgCount,
                 default=default,
-                type = type,
                 help = help,
                 metaVar = metaVar,
                 destination = destination)
@@ -54,23 +52,36 @@ class ArgParser(private val args: Array<String>,
         }
 
         iterateOverArgs()
-        val map = HashMap<String, ArgContainer>()
 
         if(isHelpRequired) {
             print(generateHelpText())
 
-            return map
+            return argContainerMap
         }
 
         for(argContainer in argContainerList) {
-            map[argContainer.getDestinationName()] = argContainer
+            argContainerMap[argContainer.getDestinationName()] = argContainer
         }
 
-        return map
+        return argContainerMap
     }
 
     private fun print(data: String) {
         System.out.print(data)
+    }
+
+    private fun preProcessArgs() {
+        for(index in iterationStartIndex until finalArgList.size) {
+            val currentArgument = finalArgList[index]
+            if(isHelpRequired(currentArgument)) {
+                isHelpRequired = true
+                break
+            }
+        }
+    }
+
+    private fun preProcessArgContainers() {
+
     }
 
     private fun iterateOverArgs() {
@@ -78,16 +89,14 @@ class ArgParser(private val args: Array<String>,
             return
         }
 
-        val startIndex = if (prog != null) 1 else 0
+        preProcessArgs()
+        if(isHelpRequired) {
+            return
+        }
+
         var previousArgContainer: ArgContainer? = null
-        for(index in startIndex until finalArgList.size) {
+        for(index in iterationStartIndex until finalArgList.size) {
             val currentArgument = finalArgList[index]
-
-            if(isHelpRequired(currentArgument)) {
-                isHelpRequired = true
-                break
-            }
-
             var isArgMatched = false
             for(argContainer in argContainerList) {
                 if(argContainer.isArgName(currentArgument)) {
@@ -96,22 +105,26 @@ class ArgParser(private val args: Array<String>,
                 }
             }
 
-            if(!isArgMatched) {
-                if(previousArgContainer == null) {
-                    continue
+            if(!isArgMatched && previousArgContainer != null) {
+                if(!previousArgContainer.isFull()) {
+                    previousArgContainer.addValue(currentArgument)
                 }
-
-                if(previousArgContainer.isSingle() && previousArgContainer.hasSingleValue()) {
-                    continue
+                else {
+                    previousArgContainer = null
                 }
+            }
 
-                previousArgContainer.addValue(currentArgument)
+            if(previousArgContainer == null) {
+                val positionalItemToFill = getPositionalArgument()
+                positionalItemToFill?.addValue(currentArgument)
             }
         }
     }
 
-    private fun handleArgumentCollection(argName: String) {
-
+    private fun getPositionalArgument(): ArgContainer? {
+        return argContainerList.find {
+            it.isPositional && !it.isFull()
+        }
     }
 
 
@@ -140,6 +153,9 @@ class ArgParser(private val args: Array<String>,
             prog
         }
         else {
+            if(!firstIndexIsPath) {
+                return DEFAULT_NAME_FOR_NON_EXISTING_PATH
+            }
             val path = finalArgList[0]
 
             val lastIndex = path.lastIndexOf(File.separator)
@@ -156,6 +172,7 @@ class ArgParser(private val args: Array<String>,
         |optional arguments:
             |   -h, --help  $ARGUMENT_PARAM_HELP_DESCRIPTION
             |$argumentUsageTexts
+            |$platformLineSeparator
         """.trimIndent().trimMargin()
     }
 
@@ -170,5 +187,7 @@ class ArgParser(private val args: Array<String>,
         const val ARGUMENT_PARAM_HELP_SHORT = "-h"
 
         const val ARGUMENT_PARAM_HELP_DESCRIPTION = "show this help message and exit"
+
+        const val DEFAULT_NAME_FOR_NON_EXISTING_PATH = "Undefined"
     }
 }
