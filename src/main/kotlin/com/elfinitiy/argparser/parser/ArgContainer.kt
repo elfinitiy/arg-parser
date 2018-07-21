@@ -109,6 +109,10 @@ class ArgContainer(
         }
     }
 
+    fun getConsumeCountType(): String {
+        return consumeArgCount;
+    }
+
     companion object {
         const val ARGUMENT_COUNT_SINGLE = "?"
         const val ARGUMENT_COUNT_SPECIAL_ANY = "*"
