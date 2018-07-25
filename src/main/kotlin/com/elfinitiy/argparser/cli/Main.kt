@@ -6,7 +6,7 @@ import com.elfinitiy.argparser.parser.ArgParser
 fun main(args: Array<String>) {
     val parser = ArgParser(args, prog="Test", firstIndexIsPath = false)
 
-    parser.addArgument("values", consumeArgCount = ArgContainer.ARGUMENT_COUNT_SPECIAL_ANY)
+    parser.addArgument("values", consumeArgCount = "1")
     parser.addArgument("second", consumeArgCount = ArgContainer.ARGUMENT_COUNT_SPECIAL_ANY)
     parser.addArgument("-f", "--file", help = "File path")
     parser.addArgument("-l", "--list", consumeArgCount = ArgContainer.ARGUMENT_COUNT_SPECIAL_ANY,

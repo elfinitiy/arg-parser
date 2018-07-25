@@ -81,14 +81,26 @@ class ArgParser(private val args: Array<String>,
     }
 
     private fun preProcessArgContainers() {
-        val nextList = argContainerList.filter {
-            it.isPositional && it.getConsumeCountType() == ArgContainer.ARGUMENT_COUNT_SPECIAL_ANY ||
-                    it.getConsumeCountType() == ArgContainer.ARGUMENT_COUNT_SPECIAL_ONE_OR_MORE
+        val positionalList = argContainerList.filter {
+            it.isPositional
         }
 
-        if(nextList.size > 1) {
+        val wildcardCount = positionalList.count {
+            it.isWildcardConsumeType()
+        }
+
+        if(wildcardCount> 1) {
             throw IllegalArgumentException("Two positional arguments with wildcard parameter count is not supported")
         }
+
+        val indexOfWildcard = positionalList.indexOfLast {
+            it.isWildcardConsumeType()
+        }
+
+        if(indexOfWildcard < positionalList.size - 1) {
+            throw IllegalArgumentException("Wildcard parameter can be either last or the only one")
+        }
+
     }
 
     private fun iterateOverArgs() {

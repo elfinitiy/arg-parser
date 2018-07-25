@@ -110,7 +110,12 @@ class ArgContainer(
     }
 
     fun getConsumeCountType(): String {
-        return consumeArgCount;
+        return consumeArgCount
+    }
+
+    fun isWildcardConsumeType(): Boolean {
+        return consumeArgCount == ArgContainer.ARGUMENT_COUNT_SPECIAL_ANY ||
+                consumeArgCount == ArgContainer.ARGUMENT_COUNT_SPECIAL_ONE_OR_MORE
     }
 
     companion object {
